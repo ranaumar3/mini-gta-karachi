@@ -1,0 +1,152 @@
+<!DOCTYPE html><html lang="ur">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini GTA Karachi Demo</title>
+  <style>
+    body { margin:0; overflow:hidden; background:#333; }
+    canvas { background:#a3c585; display:block; margin:0 auto; }
+  </style>
+</head>
+<body>
+  <canvas id="game" width="900" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");// Player
+let player = { x:100, y:100, size:20, color:"blue", inCar:false };
+
+// Car (player)
+let car = { x:300, y:300, w:40, h:20, color:"red", speed:0, angle:0 };
+
+// AI Car
+let aiCar = { x:200, y:0, w:40, h:20, color:"yellow", speed:2 };
+
+// NPCs
+let npcs = [];
+for(let i=0;i<5;i++){
+  npcs.push({x:50+Math.random()*150, y:300+Math.random()*200, size:15});
+}
+
+// Keys
+let keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+function update(){
+  if(!player.inCar){
+    if(keys["ArrowUp"]) player.y -= 2;
+    if(keys["ArrowDown"]) player.y += 2;
+    if(keys["ArrowLeft"]) player.x -= 2;
+    if(keys["ArrowRight"]) player.x += 2;
+
+    // Check enter car
+    if(keys[" "]){
+      let dx = player.x - car.x;
+      let dy = player.y - car.y;
+      if(Math.hypot(dx,dy) < 30){
+        player.inCar = true;
+        player.x = car.x;
+        player.y = car.y;
+      }
+    }
+  } else {
+    // Driving car
+    if(keys["ArrowUp"]) car.speed += 0.1;
+    if(keys["ArrowDown"]) car.speed -= 0.1;
+    if(keys["ArrowLeft"]) car.angle -= 0.05;
+    if(keys["ArrowRight"]) car.angle += 0.05;
+
+    // Friction
+    car.speed *= 0.98;
+
+    // Move
+    car.x += Math.cos(car.angle) * car.speed;
+    car.y += Math.sin(car.angle) * car.speed;
+
+    // Player follows car
+    player.x = car.x;
+    player.y = car.y;
+
+    // Exit car
+    if(keys[" "]){
+      player.inCar = false;
+      player.x += 30;
+    }
+  }
+
+  // Move AI car
+  aiCar.y += aiCar.speed;
+  if(aiCar.y > canvas.height) aiCar.y = -50;
+
+  // Move NPCs
+  for(let npc of npcs){
+    npc.x += Math.sin(Date.now()/500 + npc.y) * 0.5;
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Road
+  ctx.fillStyle = "#555";
+  ctx.fillRect(300,0,300,600);
+
+  // Sea (bottom right)
+  ctx.fillStyle = "#3fa9f5";
+  ctx.fillRect(650,400,250,200);
+
+  // Market (left side)
+  ctx.fillStyle = "#2e7d32";
+  ctx.fillRect(0,250,250,350);
+  ctx.fillStyle = "white";
+  ctx.font = "18px Arial";
+  ctx.fillText("مارکیٹ ایریا",60,270);
+
+  // Sea text
+  ctx.fillStyle = "white";
+  ctx.fillText("سی ویو",720,420);
+
+  // AI Car
+  ctx.fillStyle = aiCar.color;
+  ctx.fillRect(aiCar.x, aiCar.y, aiCar.w, aiCar.h);
+
+  // Car (player)
+  ctx.save();
+  ctx.translate(car.x, car.y);
+  ctx.rotate(car.angle);
+  ctx.fillStyle = car.color;
+  ctx.fillRect(-car.w/2,-car.h/2,car.w,car.h);
+  ctx.restore();
+
+  // Player
+  if(!player.inCar){
+    ctx.fillStyle = player.color;
+    ctx.beginPath();
+    ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // NPCs
+  ctx.fillStyle = "#ffeb3b";
+  for(let npc of npcs){
+    ctx.beginPath();
+    ctx.arc(npc.x,npc.y,npc.size/2,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // Instructions
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.fillText("تیروں کے بٹن سے حرکت کریں، Space سے گاڑی میں بیٹھیں / نکلیں", 10, 20);
+}
+
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+
+  </script>
+</body>
+</html>
